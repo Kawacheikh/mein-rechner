@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immobilien Darlehensrechner</title>
+    <title>Immobilien Darlehensrechner - Dynamisch</title>
     <style>
         :root {
             --excel-green: #217346;
@@ -17,7 +17,7 @@
         .input-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
         .input-table { border-collapse: collapse; }
         .input-table td { border: 1px solid #ccc; padding: 8px; }
-        .label-cell { background-color: #f8f9fa; font-weight: bold; width: 200px; }
+        .label-cell { background-color: #f8f9fa; font-weight: bold; width: 220px; }
         .value-cell-yellow { background-color: var(--excel-yellow); width: 160px; text-align: right; }
         .value-cell-readonly { background-color: white; text-align: right; font-weight: bold; }
         
@@ -29,12 +29,13 @@
         .calc-table tr:nth-child(even) { background-color: #f9f9f9; }
         
         .footer-row { background-color: #eee !important; font-weight: bold; }
+        .highlight-blue { color: #0078d4; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Immobilien Darlehensrechner</h2>
+    <h2>Darlehensrechner (Automatisierte Laufzeit)</h2>
 
     <div class="input-section">
         <table class="input-table">
@@ -63,11 +64,11 @@
                 <td class="value-cell-yellow"><input type="number" id="zinsPa" value="3.9" step="0.01" oninput="calculate()"> %</td>
             </tr>
             <tr>
-                <td class="label-cell">Dauer in Jahren</td>
-                <td class="value-cell-yellow"><input type="number" id="dauer" value="20" oninput="calculate()"></td>
+                <td class="label-cell">Berechnete Dauer (Jahre)</td>
+                <td class="value-cell-readonly highlight-blue" id="dauerAnzeige">0</td>
             </tr>
             <tr>
-                <td class="label-cell">Darlehen + Zinsen</td>
+                <td class="label-cell">Darlehen + Zinsen Gesamt</td>
                 <td class="value-cell-readonly" id="gesamtKosten">0,00 €</td>
             </tr>
         </table>
@@ -80,7 +81,7 @@
                 <th>Restschuld zu Anfang (€)</th>
                 <th>Zins in € (p.a. * Restschuld)</th>
                 <th>Tilgung in € (Rate - Zins)</th>
-                <th>Rate in € (Formel)</th>
+                <th>Rate in €</th>
                 <th>Restschuld Ende (€)</th>
             </tr>
         </thead>
@@ -104,40 +105,60 @@
     }
 
     function calculate() {
+        // Eingabewerte holen
         const flaeche = parseFloat(document.getElementById('flaeche').value) || 0;
-        const d_start = parseFloat(document.getElementById('darlehen').value) || 0;
+        const darlehen = parseFloat(document.getElementById('darlehen').value) || 0;
         const r_jahr = parseFloat(document.getElementById('rateJahr').value) || 0;
-        const z_pa = (parseFloat(document.getElementById('zinsPa').value) || 0) / 100;
-        const jahre = parseInt(document.getElementById('dauer').value) || 1;
+        const z_pa_prozent = parseFloat(document.getElementById('zinsPa').value) || 0;
+        const z_pa = z_pa_prozent / 100;
 
-        // Preis pro m² berechnen
+        // 1. Preis pro m² berechnen
         if (flaeche > 0) {
-            const p_qm = d_start / flaeche;
-            document.getElementById('preisQm').innerText = format(p_qm) + " €";
-        } else {
-            document.getElementById('preisQm').innerText = "0,00 €";
+            document.getElementById('preisQm').innerText = format(darlehen / flaeche) + " €";
         }
 
-        // Monatliche Rate berechnen
-        const r_monat = r_jahr / 12;
-        document.getElementById('rateMonat').innerText = format(r_monat) + " €";
+        // 2. Monatliche Rate berechnen
+        document.getElementById('rateMonat').innerText = format(r_jahr / 12) + " €";
 
-        let currentRestschuld = d_start;
+        // 3. Laufzeit berechnen (Deine Logarithmus-Formel)
+        // Formel: n = LN(Rate / (Rate - Darlehen * Zins)) / LN(1 + Zins)
+        let berechneteJahre = 0;
+        const nenner = r_jahr - (darlehen * z_pa);
+        
+        if (z_pa > 0 && nenner > 0) {
+            berechneteJahre = Math.log(r_jahr / nenner) / Math.log(1 + z_pa);
+            // Wir runden auf die nächste volle Zahl auf für die Tabellenzeilen
+            document.getElementById('dauerAnzeige').innerText = berechneteJahre.toFixed(2);
+        } else if (z_pa === 0 && r_jahr > 0) {
+            berechneteJahre = darlehen / r_jahr;
+            document.getElementById('dauerAnzeige').innerText = berechneteJahre.toFixed(2);
+        } else {
+            document.getElementById('dauerAnzeige').innerText = "Unendlich (Rate zu niedrig)";
+            return;
+        }
+
+        // 4. Tabelle generieren
+        let currentRestschuld = darlehen;
         let tableHtml = "";
         let totalZins = 0;
         let totalTilgung = 0;
         let totalRate = 0;
+        let jahr = 1;
 
-        for (let i = 1; i <= jahre; i++) {
+        // Schleife läuft solange noch Restschuld da ist
+        while (currentRestschuld > 0.01 && jahr < 100) { // Limit 100 Jahre zur Sicherheit
             let anfang = currentRestschuld;
             let zins = anfang * z_pa;
             let tilgung = r_jahr - zins;
             
-            if (tilgung > anfang) tilgung = anfang;
+            // Letztes Jahr korrigieren, falls Tilgung > Restschuld
+            if (tilgung > anfang) {
+                tilgung = anfang;
+            }
             
             let rate = zins + tilgung;
             let ende = anfang - tilgung;
-            if (ende < 0.01) ende = 0;
+            if (ende < 0) ende = 0;
 
             totalZins += zins;
             totalTilgung += tilgung;
@@ -145,7 +166,7 @@
 
             tableHtml += `
                 <tr>
-                    <td>${i}</td>
+                    <td>${jahr}</td>
                     <td>${format(anfang)}</td>
                     <td>${format(zins)}</td>
                     <td>${format(tilgung)}</td>
@@ -154,9 +175,10 @@
                 </tr>`;
 
             currentRestschuld = ende;
-            if (currentRestschuld <= 0) break;
+            jahr++;
         }
 
+        // Ergebnisse anzeigen
         document.getElementById('tableBody').innerHTML = tableHtml;
         document.getElementById('sumZins').innerText = format(totalZins);
         document.getElementById('sumTilgung').innerText = format(totalTilgung);
@@ -164,6 +186,7 @@
         document.getElementById('gesamtKosten').innerText = format(totalRate) + " €";
     }
 
+    // Initialer Aufruf
     calculate();
 </script>
 
