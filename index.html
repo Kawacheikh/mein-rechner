@@ -12,37 +12,41 @@
             --card: #ffffff;
             --accent: #0078d4;
         }
-        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 10px; color: #333; }
         .container { max-width: 1100px; margin: auto; }
         
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; }
-        h1 { margin: 0; color: var(--primary); font-size: 1.5rem; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--primary); padding: 10px 0; margin-bottom: 20px; }
+        h1 { margin: 0; color: var(--primary); font-size: 1.3rem; }
 
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
         .card { background: var(--card); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
 
         .input-group { margin-bottom: 15px; }
         label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
-        input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        input[type="range"] { width: 100%; cursor: pointer; }
+        .sub-info { font-size: 0.85rem; color: var(--accent); font-weight: bold; margin-top: 3px; display: block; }
+        
+        input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        input[type="range"] { width: 100%; cursor: pointer; height: 25px; }
         
         .result-box { background: var(--primary); color: white; padding: 15px; border-radius: 6px; margin-top: 10px; text-align: center; }
         .result-val { font-size: 1.4rem; font-weight: bold; display: block; }
 
-        .chart-container { position: relative; height: 250px; width: 100%; }
+        .chart-container { position: relative; height: 220px; width: 100%; margin-top: 10px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; font-size: 0.85rem; }
-        th { background: var(--primary); color: white; padding: 12px; text-align: right; }
+        .table-wrapper { overflow-x: auto; background: white; border-radius: 8px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        th { background: var(--primary); color: white; padding: 10px; text-align: right; white-space: nowrap; }
         td { padding: 10px; border-bottom: 1px solid #eee; text-align: right; font-family: monospace; }
         tr:nth-child(even) { background: #f9f9f9; }
         .footer-row { background: #eee !important; font-weight: bold; }
 
-        .btn-print { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-print:hover { opacity: 0.9; }
+        .btn-print { background: var(--accent); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
 
         @media print {
-            .input-section, .btn-print { display: none; }
-            .card { box-shadow: none; border: 1px solid #ccc; }
+            .input-section, .btn-print, header { display: none; }
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            .table-wrapper { overflow: visible; }
         }
     </style>
 </head>
@@ -51,7 +55,7 @@
 <div class="container">
     <header>
         <h1>🏠 ImmoCalc Pro</h1>
-        <button class="btn-print" onclick="window.print()">Als PDF speichern / Drucken</button>
+        <button class="btn-print" onclick="window.print()">Als PDF / Drucken</button>
     </header>
 
     <div class="grid input-section">
@@ -63,13 +67,14 @@
             <div class="input-group">
                 <label>Wohnfläche (m²)</label>
                 <input type="number" id="flaeche" value="90" oninput="calculate()">
+                <span class="sub-info" id="preisQmDisplay">Kaufpreis: 0,00 €/m²</span>
             </div>
             <div class="input-group">
                 <label>Grunderwerbsteuer (%)</label>
                 <input type="number" id="steuer" value="5.0" step="0.1" oninput="calculate()">
             </div>
             <div class="input-group">
-                <label>Notar & Grundbuch (%) [Standard 2.0%]</label>
+                <label>Notar & Grundbuch (%)</label>
                 <input type="number" id="notar" value="2.0" step="0.1" oninput="calculate()">
             </div>
             <div class="input-group">
@@ -90,6 +95,7 @@
             <div class="input-group">
                 <label>Jährliche Rate (€)</label>
                 <input type="number" id="rateJahr" value="24000" oninput="calculate()">
+                <span class="sub-info" id="rateMonatDisplay">Monatliche Rate: 0,00 €</span>
             </div>
             <div class="input-group">
                 <label>Sondertilgung p.a. (€)</label>
@@ -98,11 +104,11 @@
             <div class="chart-container">
                 <canvas id="myChart"></canvas>
             </div>
-            <div id="infoLaufzeit" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
+            <div id="infoLaufzeit" style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent); font-size: 1rem;"></div>
         </div>
     </div>
 
-    <div class="card" style="margin-top: 20px;">
+    <div class="table-wrapper card">
         <table>
             <thead>
                 <tr>
@@ -118,7 +124,7 @@
             <tfoot>
                 <tr class="footer-row">
                     <td>Gesamt</td>
-                    <td id="totalAnfang">-</td>
+                    <td>-</td>
                     <td id="totalZins">0</td>
                     <td id="totalTilgung">0</td>
                     <td id="totalRate">0</td>
@@ -137,8 +143,8 @@
     }
 
     function calculate() {
-        // Eingaben
         const kaufpreis = parseFloat(document.getElementById('kaufpreis').value) || 0;
+        const flaeche = parseFloat(document.getElementById('flaeche').value) || 0;
         const steuer = (parseFloat(document.getElementById('steuer').value) || 0) / 100;
         const notar = (parseFloat(document.getElementById('notar').value) || 0) / 100;
         const ek = parseFloat(document.getElementById('ek').value) || 0;
@@ -148,48 +154,58 @@
         
         document.getElementById('zinsVal').innerText = document.getElementById('zins').value;
 
-        // Nebenkosten & Darlehen berechnen
+        // 1. Kaufpreis pro m² anzeigen
+        if (flaeche > 0) {
+            document.getElementById('preisQmDisplay').innerText = `Kaufpreis: ${format(kaufpreis / flaeche)} €/m²`;
+        }
+
+        // 2. Monatliche Rate anzeigen
+        document.getElementById('rateMonatDisplay').innerText = `Monatliche Rate: ${format(rateJahr / 12)} €`;
+
+        // Nebenkosten & Darlehen
         const nebenkosten = kaufpreis * (steuer + notar);
         const darlehen = (kaufpreis + nebenkosten) - ek;
         document.getElementById('darlehenDisplay').innerText = format(darlehen) + " €";
 
-        // Tabelle & Berechnung
         let currentRest = darlehen;
         let tableHtml = "";
         let tZins = 0, tTilgung = 0, tRate = 0;
         let jahr = 1;
 
-        while (currentRest > 0.01 && jahr <= 50) {
-            let anfang = currentRest;
-            let zinsEuro = anfang * zinsPa;
-            let tilgungNormal = rateJahr - zinsEuro;
-            
-            if (tilgungNormal < 0) {
-                document.getElementById('infoLaufzeit').innerText = "Rate zu niedrig für Zinsen!";
-                return;
+        if (darlehen > 0) {
+            while (currentRest > 0.01 && jahr <= 60) {
+                let anfang = currentRest;
+                let zinsEuro = anfang * zinsPa;
+                let tilgungNormal = rateJahr - zinsEuro;
+                
+                if (tilgungNormal < 0 && zinsPa > 0) {
+                    document.getElementById('infoLaufzeit').innerText = "Rate deckt die Zinsen nicht!";
+                    document.getElementById('tableBody').innerHTML = "";
+                    return;
+                }
+
+                let tilgungGesamt = tilgungNormal + soti;
+                if (tilgungGesamt > anfang) tilgungGesamt = anfang;
+                
+                let rateGesamt = zinsEuro + tilgungGesamt;
+                let ende = anfang - tilgungGesamt;
+
+                tZins += zinsEuro;
+                tTilgung += tilgungGesamt;
+                tRate += rateGesamt;
+
+                tableHtml += `<tr>
+                    <td>${jahr}</td>
+                    <td>${format(anfang)}</td>
+                    <td>${format(zinsEuro)}</td>
+                    <td>${format(tilgungGesamt)}</td>
+                    <td>${format(rateGesamt)}</td>
+                    <td>${format(ende)}</td>
+                </tr>`;
+
+                currentRest = ende;
+                jahr++;
             }
-
-            let tilgungGesamt = tilgungNormal + soti;
-            if (tilgungGesamt > anfang) tilgungGesamt = anfang;
-            
-            let rateGesamt = zinsEuro + tilgungGesamt;
-            let ende = anfang - tilgungGesamt;
-
-            tZins += zinsEuro;
-            tTilgung += tilgungGesamt;
-            tRate += rateGesamt;
-
-            tableHtml += `<tr>
-                <td>${jahr}</td>
-                <td>${format(anfang)}</td>
-                <td>${format(zinsEuro)}</td>
-                <td>${format(tilgungGesamt)}</td>
-                <td>${format(rateGesamt)}</td>
-                <td>${format(ende)}</td>
-            </tr>`;
-
-            currentRest = ende;
-            jahr++;
         }
 
         document.getElementById('tableBody').innerHTML = tableHtml;
@@ -208,7 +224,7 @@
         myChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['Zinsen an Bank', 'Getilgtes Darlehen'],
+                labels: ['Zinsen gesamt', 'Darlehen'],
                 datasets: [{
                     data: [zinsen, darlehen],
                     backgroundColor: ['#e74c3c', '#217346'],
