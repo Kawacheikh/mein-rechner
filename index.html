@@ -12,17 +12,16 @@
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f0f0f0; }
         .container { background: white; padding: 20px; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
-        
         h2 { color: var(--excel-green); border-bottom: 2px solid var(--excel-green); padding-bottom: 10px; }
 
         .input-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
         .input-table { border-collapse: collapse; }
         .input-table td { border: 1px solid #ccc; padding: 8px; }
         .label-cell { background-color: #f8f9fa; font-weight: bold; width: 180px; }
-        .value-cell-yellow { background-color: var(--excel-yellow); width: 120px; text-align: right; }
+        .value-cell-yellow { background-color: var(--excel-yellow); width: 150px; text-align: right; }
         .value-cell-readonly { background-color: white; text-align: right; font-weight: bold; }
         
-        input { border: none; background: transparent; text-align: right; width: 100%; font-size: 1rem; outline: none; }
+        input { border: none; background: transparent; text-align: right; width: 80%; font-size: 1rem; outline: none; }
 
         .calc-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .calc-table th { background-color: var(--excel-green); color: white; padding: 10px; border: 1px solid #fff; font-size: 0.85rem; }
@@ -30,7 +29,6 @@
         .calc-table tr:nth-child(even) { background-color: #f9f9f9; }
         
         .footer-row { background-color: #eee !important; font-weight: bold; }
-        .unit { font-size: 0.8rem; color: #666; margin-left: 4px; }
     </style>
 </head>
 <body>
@@ -42,15 +40,19 @@
         <table class="input-table">
             <tr>
                 <td class="label-cell">Darlehen</td>
-                <td class="value-cell-yellow"><input type="number" id="darlehen" value="400000" oninput="calculate()"></td>
+                <td class="value-cell-yellow"><input type="number" id="darlehen" value="400000" oninput="calculate()"> €</td>
             </tr>
             <tr>
                 <td class="label-cell">Rate (Jährlich)</td>
-                <td class="value-cell-yellow"><input type="number" id="rateJahr" value="28800" oninput="calculate()"></td>
+                <td class="value-cell-yellow"><input type="number" id="rateJahr" value="28800" oninput="calculate()"> €</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Rate (Monatlich)</td>
+                <td class="value-cell-readonly" id="rateMonat">0,00 €</td>
             </tr>
             <tr>
                 <td class="label-cell">Zinssatz p.a. (%)</td>
-                <td class="value-cell-yellow"><input type="number" id="zinsPa" value="3.9" step="0.01" oninput="calculate()"></td>
+                <td class="value-cell-yellow"><input type="number" id="zinsPa" value="3.9" step="0.01" oninput="calculate()"> %</td>
             </tr>
             <tr>
                 <td class="label-cell">Dauer in Jahren</td>
@@ -74,8 +76,7 @@
                 <th>Restschuld Ende (€)</th>
             </tr>
         </thead>
-        <tbody id="tableBody">
-            </tbody>
+        <tbody id="tableBody"></tbody>
         <tfoot>
             <tr class="footer-row">
                 <td>Gesamt</td>
@@ -100,9 +101,12 @@
         const z_pa = (parseFloat(document.getElementById('zinsPa').value) || 0) / 100;
         const jahre = parseInt(document.getElementById('dauer').value) || 1;
 
+        // Monatliche Rate berechnen
+        const r_monat = r_jahr / 12;
+        document.getElementById('rateMonat').innerText = format(r_monat) + " €";
+
         let currentRestschuld = d_start;
         let tableHtml = "";
-        
         let totalZins = 0;
         let totalTilgung = 0;
         let totalRate = 0;
@@ -112,10 +116,7 @@
             let zins = anfang * z_pa;
             let tilgung = r_jahr - zins;
             
-            // Verhindern, dass mehr getilgt wird als Restschuld da ist
-            if (tilgung > anfang) {
-                tilgung = anfang;
-            }
+            if (tilgung > anfang) tilgung = anfang;
             
             let rate = zins + tilgung;
             let ende = anfang - tilgung;
@@ -133,8 +134,7 @@
                     <td>${format(tilgung)}</td>
                     <td>${format(rate)}</td>
                     <td>${format(ende)}</td>
-                </tr>
-            `;
+                </tr>`;
 
             currentRestschuld = ende;
             if (currentRestschuld <= 0) break;
@@ -147,7 +147,6 @@
         document.getElementById('gesamtKosten').innerText = format(totalRate) + " €";
     }
 
-    // Erstberechnung beim Laden
     calculate();
 </script>
 
