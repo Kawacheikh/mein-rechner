@@ -17,11 +17,11 @@
         .input-section { display: flex; justify-content: flex-end; margin-bottom: 30px; }
         .input-table { border-collapse: collapse; }
         .input-table td { border: 1px solid #ccc; padding: 8px; }
-        .label-cell { background-color: #f8f9fa; font-weight: bold; width: 180px; }
-        .value-cell-yellow { background-color: var(--excel-yellow); width: 150px; text-align: right; }
+        .label-cell { background-color: #f8f9fa; font-weight: bold; width: 200px; }
+        .value-cell-yellow { background-color: var(--excel-yellow); width: 160px; text-align: right; }
         .value-cell-readonly { background-color: white; text-align: right; font-weight: bold; }
         
-        input { border: none; background: transparent; text-align: right; width: 80%; font-size: 1rem; outline: none; }
+        input { border: none; background: transparent; text-align: right; width: 75%; font-size: 1rem; outline: none; }
 
         .calc-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         .calc-table th { background-color: var(--excel-green); color: white; padding: 10px; border: 1px solid #fff; font-size: 0.85rem; }
@@ -34,13 +34,21 @@
 <body>
 
 <div class="container">
-    <h2>Darlehensrechner</h2>
+    <h2>Immobilien Darlehensrechner</h2>
 
     <div class="input-section">
         <table class="input-table">
             <tr>
+                <td class="label-cell">Wohnfläche</td>
+                <td class="value-cell-yellow"><input type="number" id="flaeche" value="90" oninput="calculate()"> m²</td>
+            </tr>
+            <tr>
                 <td class="label-cell">Darlehen</td>
                 <td class="value-cell-yellow"><input type="number" id="darlehen" value="400000" oninput="calculate()"> €</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Kaufpreis / m²</td>
+                <td class="value-cell-readonly" id="preisQm">0,00 €</td>
             </tr>
             <tr>
                 <td class="label-cell">Rate (Jährlich)</td>
@@ -96,10 +104,19 @@
     }
 
     function calculate() {
+        const flaeche = parseFloat(document.getElementById('flaeche').value) || 0;
         const d_start = parseFloat(document.getElementById('darlehen').value) || 0;
         const r_jahr = parseFloat(document.getElementById('rateJahr').value) || 0;
         const z_pa = (parseFloat(document.getElementById('zinsPa').value) || 0) / 100;
         const jahre = parseInt(document.getElementById('dauer').value) || 1;
+
+        // Preis pro m² berechnen
+        if (flaeche > 0) {
+            const p_qm = d_start / flaeche;
+            document.getElementById('preisQm').innerText = format(p_qm) + " €";
+        } else {
+            document.getElementById('preisQm').innerText = "0,00 €";
+        }
 
         // Monatliche Rate berechnen
         const r_monat = r_jahr / 12;
